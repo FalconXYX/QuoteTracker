@@ -58,7 +58,7 @@ h1 {
   border-radius: 8px;
   background: #fff;
   box-shadow: 0 1px 4px rgba(36, 40, 56, 0.04);
-  padding: 10px 9px 7px 9px;
+  padding: 10px;
   display: flex;
   flex-direction: column;
   align-items: stretch;
@@ -79,7 +79,7 @@ h1 {
 .quote-search {
   max-width: 350px;
   min-width: 0;
-  margin: 0 auto;
+  margin: 1px auto;
 }
 
 .reminder-banner {
@@ -353,8 +353,7 @@ body.dark .textarea[contenteditable]:empty::before {
   background: #e3e8ff;
   color: #2c387e;
   border-radius: 999px;
-  padding: 2px 9px 2px 9px;
-  padding-left: 15px;
+  padding: 6px 7px;
   font-size: 0.85em;
   font-weight: 500;
   margin-right: 0;
@@ -365,7 +364,6 @@ body.dark .textarea[contenteditable]:empty::before {
   background-color: rgba(0, 0, 0, 0.001);
   border: none;
   color: #667eea;
-  margin-left: 5px;
   font-size: 1.05em;
   cursor: pointer;
   line-height: 1;
@@ -488,4 +486,195 @@ body.dark .quote-search-results li {
 
 .toggle-dark:hover {
   color: #4361ee;
+}
+
+/* Ensure scrolling doesn’t clip last card */
+.scrollable {
+  max-height: 400px;
+  overflow-y: auto;
+  padding-right: 6px;
+}
+
+/* Invisible spacer div for bottom breathing room */
+.scroll-spacer {
+  height: 20px;
+}
+
+/* Clean vertical card layout */
+.quote-card {
+  display: flex;
+  flex-direction: column;
+  padding: 12px 14px;
+  background: #ffffff;
+  border-radius: 10px;
+  box-shadow: 0 1px 4px rgba(36, 40, 56, 0.08);
+  margin-bottom: 10px;
+  gap: 6px;
+
+}
+
+body.dark .quote-card {
+  background: #2b2e3b;
+  box-shadow: 0 1px 4px rgba(12, 16, 27, 0.2);
+}
+
+/* Visually emphasize quote */
+.quote-text {
+  font-style: italic;
+  font-size: 1.02rem;
+  font-weight: 500;
+  margin: 0;
+  text-align: center;
+  line-height: 1.4;
+}
+
+/* Tag pills small and light */
+.tags-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  justify-content: center;
+  font-size: 0.78rem;
+  opacity: 0.85;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.tag-pill {
+  background: #e3e8ff;
+  color: #2c387e;
+  border-radius: 5px;
+  padding: 2px 6px;
+  font-weight: 500;
+  font-size: 0.78rem;
+}
+
+body.dark .tag-pill {
+  background: #334155;
+  color: #93c5fd;
+}
+
+/* Source like footnote */
+.source-info {
+  font-size: 0.74rem;
+  text-align: center;
+  opacity: 0.65;
+}
+
+/* OUTER WRAPPER: stretch to fill available space, responsive */
+.quote-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  /* allow parent to define height */
+  max-height: 50vh;
+  /* prevent it from going offscreen */
+  min-height: 30vh;
+  /* prevents it from collapsing too small */
+  position: relative;
+}
+
+/* SCROLL AREA: fills part of the parent height, scrolls */
+.quote-scroll {
+  flex: 1;
+  overflow-y: auto;
+  padding-right: 6px;
+  padding-bottom: 12px;
+}
+
+/* Add to your dark mode section */
+body.dark .rti--container {
+  --rti-bg: #2b2e3b;
+  /* dark background */
+  --rti-border: #39465a;
+  /* dark border */
+  --rti-main: #4361ee;
+  /* accent color */
+  --rti-tag: #334155;
+  /* tag background */
+  --rti-tag-remove: #93c5fd;
+  /* remove button color */
+}
+
+/* Base styling for tag container in light mode */
+.rti--container {
+  --rti-bg: #fff;
+  --rti-border: #c7d2fe;
+  --rti-main: #3182ce;
+  --rti-tag: #e3e8ff;
+  --rti-tag-remove: #e53e3e;
+}
+
+/* Override input padding to match your design */
+input.rti--input {
+  padding: 5px;
+  font-size: 0.85rem;
+}
+
+/* Adjust spacing inside dark mode */
+body.dark input.rti--input {
+  color: #e1e3e7;
+}
+
+.delete-btn {
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  width: 24px;
+  height: 24px;
+  border: none;
+  border-radius: 50%;
+  background-color: transparent;
+  color: #7c7e87;
+  font-size: 18px;
+  font-weight: 600;
+  cursor: pointer;
+  opacity: 0.4;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.quote-card {
+  position: relative;
+}
+
+.delete-btn:hover {
+  background-color: #ff4d4f1a;
+  color: #ff4d4f;
+  opacity: 1;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+button:focus,
+button:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+.tag-input-container {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.tag-pill-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.tag-input input {
+  background: #f5f7fa;
+  border-radius: 6px;
+  padding: 6px 7px;
+  font-size: 0.85rem;
+}
+
+body.dark .tag-input input {
+  background: #232733;
+  color: #e1e3e7;
 }

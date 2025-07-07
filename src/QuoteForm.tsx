@@ -1,11 +1,7 @@
-import React, {
-  useState,
-  useRef,
-  useEffect,
-  type KeyboardEvent,
-  type ChangeEvent,
-} from "react";
+import React, { useState, useRef, useEffect } from "react";
 import type { QuoteFormData } from "./types";
+import { Chip, Button } from "@mui/material";
+import CancelIcon from "@mui/icons-material/Cancel";
 
 interface Props {
   onSuccess: () => void;
@@ -19,23 +15,27 @@ const QuoteForm: React.FC<Props> = ({ onSuccess }) => {
     source: "",
   });
   const [tags, setTags] = useState<string[]>([]);
-  const [tagInput, setTagInput] = useState("");
+  const [inputValue, setInputValue] = useState("");
   const [loading, setLoading] = useState(false);
-
-  // Ref to access the contentEditable span
   const quoteRef = useRef<HTMLSpanElement | null>(null);
 
-  // Keep span in sync with form.quote
   useEffect(() => {
     if (quoteRef.current && quoteRef.current.textContent !== form.quote) {
       quoteRef.current.textContent = form.quote;
     }
   }, [form.quote]);
 
-  // On input, update form.quote
   const handleQuoteInput = () => {
-    const newText = quoteRef.current?.textContent ?? "";
-    setForm((prev) => ({ ...prev, quote: newText }));
+    if (!quoteRef.current) return;
+    const plainText = quoteRef.current.innerText;
+    setForm((prev) => ({ ...prev, quote: plainText }));
+    quoteRef.current.textContent = plainText;
+  };
+
+  const handlePaste = (e: React.ClipboardEvent<HTMLSpanElement>) => {
+    e.preventDefault();
+    const text = e.clipboardData.getData("text/plain");
+    document.execCommand("insertText", false, text);
   };
 
   const handleChange = (
@@ -44,45 +44,54 @@ const QuoteForm: React.FC<Props> = ({ onSuccess }) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  const handleTagKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
-    if (
-      (e.key === "Enter" || e.key === "Tab" || e.key === ",") &&
-      tagInput.trim() !== ""
-    ) {
-      e.preventDefault();
-      addTag(tagInput.trim());
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!form.quote.trim()) return;
+
+    setLoading(true);
+    try {
+      const res = await fetch(`${API_BASE}/CreateQuote`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          quoteText: form.quote,
+          source: form.source,
+          tags,
+        }),
+      });
+      if (!res.ok) {
+        console.error("Failed to save quote");
+        setLoading(false);
+        return;
+      }
+      setForm({ quote: "", source: "" });
+      setTags([]);
+      if (quoteRef.current) quoteRef.current.textContent = "";
+      onSuccess();
+    } catch (err) {
+      console.error("Error submitting quote:", err);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const addTag = (tag: string) => {
-    if (!tags.includes(tag)) setTags([...tags, tag]);
-    setTagInput("");
+  const handleAddTag = () => {
+    const newTag = inputValue.trim();
+    if (newTag && !tags.includes(newTag)) {
+      setTags([...tags, newTag]);
+    }
+    setInputValue("");
   };
 
-  const removeTag = (remove: string) => {
-    setTags(tags.filter((tag) => tag !== remove));
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (["Enter", ","].includes(e.key)) {
+      e.preventDefault();
+      handleAddTag();
+    }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-
-    await fetch(`${API_BASE}/CreateQuote`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        quoteText: form.quote,
-        source: form.source,
-        tags: tags,
-      }),
-    });
-
-    setForm({ quote: "", source: "" });
-    setTags([]);
-    setTagInput("");
-    if (quoteRef.current) quoteRef.current.textContent = "";
-    setLoading(false);
-    onSuccess();
+  const handleDeleteTag = (tagToDelete: string) => {
+    setTags(tags.filter((tag) => tag !== tagToDelete));
   };
 
   return (
@@ -102,38 +111,32 @@ const QuoteForm: React.FC<Props> = ({ onSuccess }) => {
             spellCheck={false}
             ref={quoteRef}
             onInput={handleQuoteInput}
+            onPaste={handlePaste}
             suppressContentEditableWarning={true}
           />
         </div>
 
         <label htmlFor="tags-input">Tags</label>
-        <div className="tag-input-group">
-          {tags.map((tag) => (
-            <span key={tag} className="tag-pill">
-              {tag}
-              <button
-                type="button"
-                aria-label={`Remove tag ${tag}`}
-                onClick={() => removeTag(tag)}
-                className="remove-tag"
-                tabIndex={0}
-              >
-                &times;
-              </button>
-            </span>
-          ))}
+        <div className="tag-input-container">
           <input
             id="tags-input"
-            type="text"
-            value={tagInput}
-            onChange={(e: ChangeEvent<HTMLInputElement>) =>
-              setTagInput(e.target.value)
-            }
-            onKeyDown={handleTagKeyDown}
-            placeholder={tags.length === 0 ? "Type and press Enter" : ""}
+            value={inputValue}
+            onChange={(e) => setInputValue(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder="Add a tag"
             className="tag-input"
-            autoComplete="off"
           />
+          <div className="tag-pill-container">
+            {tags.map((tag) => (
+              <Chip
+                key={tag}
+                label={tag}
+                className="tag-pill"
+                onDelete={() => handleDeleteTag(tag)}
+                deleteIcon={<CancelIcon className="remove-tag" />}
+              />
+            ))}
+          </div>
         </div>
 
         <label htmlFor="source-input">Source (optional)</label>
@@ -144,9 +147,16 @@ const QuoteForm: React.FC<Props> = ({ onSuccess }) => {
           onChange={handleChange}
           placeholder="Source"
         />
-        <button type="submit" disabled={loading}>
+
+        <Button
+          type="submit"
+          disabled={loading}
+          fullWidth
+          variant="contained"
+          className="submit-button"
+        >
           {loading ? "Saving..." : "Save Quote"}
-        </button>
+        </Button>
       </form>
     </section>
   );

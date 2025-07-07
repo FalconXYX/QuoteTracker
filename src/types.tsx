@@ -1,4 +1,5 @@
 export interface Quotes {
+  id: string;
   quote: string;
   tags: string[];
   source?: string;

@@ -3,9 +3,8 @@ import type { Quotes } from "./types";
 import QuoteForm from "./QuoteForm";
 import QuoteViewer from "./QuoteViewer";
 import QuoteSearch from "./QuoteSearch";
-//import ReminderBanner from "./ReminderBanner";
 import { DayPicker } from "react-day-picker";
-import "react-day-picker/dist/style.css"; // Use or override with your CSS
+import "react-day-picker/dist/style.css";
 import "./App.css";
 
 const API_BASE = "http://0.0.0.0:4094/development";
@@ -16,67 +15,38 @@ const App: React.FC = () => {
   const [quoteData, setQuoteData] = useState<Quotes[] | null>(null);
   const [dailyReminder, setDailyReminder] = useState(false);
   const [darkMode, setDarkMode] = useState(() => {
-    // Save mode to localStorage so it sticks
     if (typeof window !== "undefined") {
       return window.localStorage.getItem("darkMode") === "true";
     }
     return false;
   });
+
   useEffect(() => {
     if (!darkMode) document.body.classList.add("dark");
     else document.body.classList.remove("dark");
     window.localStorage.setItem("darkMode", darkMode ? "true" : "false");
   }, [darkMode]);
 
-  useEffect(() => {
-    const fetchQuote = async () => {
-      const dateStr = getDateString(selectedDate);
-      const res = await fetch(`${API_BASE}/GetQuote?date=${dateStr}`);
+  async function handleDeleteQuote(id: string) {
+    console.log("Deleting quote with ID:", id);
+    const res = await fetch(`${API_BASE}/DeleteQuote?id=${id}`, {
+      method: "DELETE",
+    });
 
-      if (res.ok) {
-        console.log(`Fetched quote for date: ${dateStr}`);
-        const data = await res.json();
+    if (!res.ok) {
+      console.error("Failed to delete quote:", id);
+      return;
+    }
 
-        try {
-          // Check if message looks like valid JSON array
-          if (!data.message || !data.message.trim().startsWith("[")) {
-            console.warn(
-              "No quotes found or invalid data format:",
-              data.message
-            );
-            setQuoteData(null);
-            setDailyReminder(isToday(selectedDate));
-            return;
-          }
-
-          const parsed = JSON.parse(data.message);
-          const fixedData: Quotes[] = [];
-
-          for (const entry of parsed) {
-            console.log("Processing entry:", entry);
-            const out: Quotes = {
-              quote: entry.quote.quoteText,
-              source: entry.quote.source,
-              tags: entry.tags.map((tag: any) => tag.name).filter(Boolean),
-            };
-            fixedData.push(out);
-          }
-
-          setQuoteData(fixedData.length > 0 ? fixedData : null);
-          setDailyReminder(fixedData.length === 0 && isToday(selectedDate));
-        } catch (err) {
-          console.error("Failed to parse quote data:", err);
-          setQuoteData(null);
-          setDailyReminder(isToday(selectedDate));
-        }
-      } else {
-        setQuoteData(null);
-        setDailyReminder(isToday(selectedDate));
+    // Remove deleted quote from local state to trigger re-render
+    setQuoteData((prev) => {
+      const updated = prev ? prev.filter((quote) => quote.id !== id) : null;
+      if (updated?.length === 0 && isToday(selectedDate)) {
+        setDailyReminder(true);
       }
-    };
-
-    fetchQuote();
-  }, [selectedDate]);
+      return updated?.length ? updated : null;
+    });
+  }
 
   function isToday(date: Date) {
     const now = new Date();
@@ -87,22 +57,55 @@ const App: React.FC = () => {
     );
   }
 
-  const refreshQuote = async () => {
-    const dateStr = getDateString(selectedDate);
-    console.log(`Refreshing quote for date: ${dateStr}`);
+  const loadQuoteForDate = async (date: Date) => {
+    const dateStr = getDateString(date);
     const res = await fetch(`${API_BASE}/GetQuote?date=${dateStr}`);
-    if (res.ok) {
-      const data = await res.json();
-      setQuoteData(data || null);
-      setDailyReminder(!data && isToday(selectedDate));
+
+    if (!res.ok) {
+      setQuoteData(null);
+      setDailyReminder(isToday(date));
+      return;
+    }
+
+    const data = await res.json();
+
+    try {
+      if (!data.message || !data.message.trim().startsWith("[")) {
+        setQuoteData(null);
+        setDailyReminder(isToday(date));
+        return;
+      }
+
+      const parsed = JSON.parse(data.message);
+      const fixedData: Quotes[] = parsed.map((entry: any) => ({
+        id: entry.quote.id,
+        quote: entry.quote.quoteText,
+        source: entry.quote.source,
+        tags: entry.tags.map((tag: any) => tag.name).filter(Boolean),
+      }));
+
+      console.log("Loaded quotes for date:", dateStr, fixedData);
+      setQuoteData(fixedData.length > 0 ? fixedData : null);
+      setDailyReminder(fixedData.length === 0 && isToday(date));
+    } catch (err) {
+      console.error("Failed to parse quote data:", err);
+      setQuoteData(null);
+      setDailyReminder(isToday(date));
     }
   };
+
+  useEffect(() => {
+    loadQuoteForDate(selectedDate);
+  }, [selectedDate]);
+
+  const refreshQuote = () => loadQuoteForDate(selectedDate);
 
   return (
     <main className="app-container">
       <header>
         <h1>DailyQuotes</h1>
       </header>
+
       <button
         className="toggle-dark"
         onClick={() => setDarkMode((d) => !d)}
@@ -112,9 +115,6 @@ const App: React.FC = () => {
         {darkMode ? "🌙 Dark Mode" : "☀️ Light Mode"}
       </button>
 
-      {/* {dailyReminder && <ReminderBanner />} */}
-
-      {/* --- 2-column grid for Calendar and Today's Quote --- */}
       <div className="dashboard-top-row">
         <div className="calendar">
           <DayPicker
@@ -126,10 +126,10 @@ const App: React.FC = () => {
             toDate={new Date()}
           />
         </div>
-        <QuoteViewer quote={quoteData} date={selectedDate} />
+
+        <QuoteViewer quote={quoteData} onDelete={handleDeleteQuote} />
       </div>
 
-      {/* --- 2-column grid for Add Quote and Tag Search --- */}
       <div className="dashboard-bottom-row">
         {isToday(selectedDate) && <QuoteForm onSuccess={refreshQuote} />}
         <QuoteSearch />
