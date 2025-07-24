@@ -189,7 +189,7 @@ const QuoteSearch: React.FC = () => {
                 {suggestions.map((tag) => (
                   <ListItem
                     key={tag}
-                    button
+                    component="button"
                     onMouseDown={() => handleSuggestionClick(tag)}
                     sx={{
                       // Light mode default styles

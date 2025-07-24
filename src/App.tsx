@@ -62,6 +62,10 @@ const App: React.FC = () => {
     const res = await fetch(`${API_BASE}/GetQuote?date=${dateStr}`);
 
     if (!res.ok) {
+      if (dailyReminder) {
+        // Show a reminder notification
+        //alert("Don't forget to add your daily quote!");
+      }
       setQuoteData(null);
       setDailyReminder(isToday(date));
       return;
