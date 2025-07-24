@@ -29,7 +29,6 @@ const QuoteForm: React.FC<Props> = ({ onSuccess }) => {
     if (!quoteRef.current) return;
     const plainText = quoteRef.current.innerText;
     setForm((prev) => ({ ...prev, quote: plainText }));
-    quoteRef.current.textContent = plainText;
   };
 
   const handlePaste = (e: React.ClipboardEvent<HTMLSpanElement>) => {
