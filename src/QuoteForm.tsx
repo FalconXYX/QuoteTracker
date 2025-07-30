@@ -7,7 +7,7 @@ interface Props {
   onSuccess: () => void;
 }
 
-const API_BASE = "http://0.0.0.0:4094/development";
+const API_BASE = "https://100.70.164.49:4094/development";
 
 const QuoteForm: React.FC<Props> = ({ onSuccess }) => {
   const [form, setForm] = useState<Omit<QuoteFormData, "tags">>({

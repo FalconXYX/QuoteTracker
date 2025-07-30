@@ -7,7 +7,7 @@ import { DayPicker } from "react-day-picker";
 import "react-day-picker/dist/style.css";
 import "./App.css";
 
-const API_BASE = "http://0.0.0.0:4094/development";
+const API_BASE = "https://100.70.164.49:4094/development";
 const getDateString = (date: Date) => date.toISOString().split("T")[0];
 
 const App: React.FC = () => {
